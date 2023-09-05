@@ -1,0 +1,228 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Super-Mario</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Press+Start+2P&display=swap">
+<meta charset="utf-8">
+<style>
+body {
+	margin: 0;
+	padding: 0;
+	background-color: #000;
+}
+
+p {
+	color: #ffffff;
+	font-family: 'Press Start 2P', cursive;
+	margin-left: 20px;
+}
+
+</style>
+<script src="//cdn.jsdelivr.net/phaser/2.6.2/phaser.min.js"></script>
+</head>
+<body>
+	<p id="win"></p>
+	<p id="score"></p>
+	<p id="coin"></p>
+	<script type="text/javascript">
+
+		var score = 0;
+		var coinscore = 0;
+
+		var scorep = document.getElementById("score");
+		var coinsp = document.getElementById("coin");
+		var winp = document.getElementById("win");
+
+		var game = new Phaser.Game(216, 200, Phaser.CANVAS, '', {
+			preload : preload,
+			create : create,
+			update : update
+		}, false, false);
+
+		function preload() {
+			this.load.spritesheet('tiles', 'assets/super_mario_tiles.png', 16,
+					16);
+			this.load.spritesheet('goomba', 'assets/goomba.png', 16, 16);
+			this.load.spritesheet('mario', 'assets/mario.png', 16, 16);
+			this.load.spritesheet('coin', 'assets/coin.png', 16, 16);
+
+			this.load.tilemap('level', 'assets/super_mario_map.json', null,
+					Phaser.Tilemap.TILED_JSON);
+		}
+
+		function create() {
+			Phaser.Canvas.setImageRenderingCrisp(game.canvas)
+			game.scale.pageAlignHorizontally = true;
+			game.scale.pageAlignVertically = true
+			game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+			game.physics.startSystem(Phaser.Physics.ARCADE);
+
+			game.stage.backgroundColor = '#5c94fc';
+
+			map = game.add.tilemap('level');
+			map.addTilesetImage('tiles', 'tiles');
+			map.setCollisionBetween(3, 12, true, 'solid');
+
+			map.createLayer('background');
+
+			layer = map.createLayer('solid');
+			layer.resizeWorld();
+
+			coins = game.add.group();
+			coins.enableBody = true;
+			map.createFromTiles(2, null, 'coin', 'stuff', coins);
+			coins.callAll('animations.add', 'animations', 'spin',
+					[ 0, 0, 1, 2 ], 3, true);
+			coins.callAll('animations.play', 'animations', 'spin');
+
+			goombas = game.add.group();
+			goombas.enableBody = true;
+			map.createFromTiles(1, null, 'goomba', 'stuff', goombas);
+			goombas.callAll('animations.add', 'animations', 'walk', [ 0, 1 ],
+					2, true);
+			goombas.callAll('animations.play', 'animations', 'walk');
+			goombas.setAll('body.bounce.x', 1);
+			goombas.setAll('body.velocity.x', -20);
+			goombas.setAll('body.gravity.y', 500);
+
+			player = game.add.sprite(16, game.world.height - 48, 'mario');
+			game.physics.arcade.enable(player);
+			player.body.gravity.y = 370;
+			player.body.collideWorldBounds = true;
+			player.animations.add('walkRight', [ 1, 2, 3 ], 10, true);
+			player.animations.add('walkLeft', [ 8, 9, 10 ], 10, true);
+			player.goesRight = true;
+
+			game.camera.follow(player);
+
+			cursors = game.input.keyboard.createCursorKeys();
+		}
+
+		function update() {
+			game.physics.arcade.collide(player, layer);
+			game.physics.arcade.collide(goombas, layer);
+			game.physics.arcade.overlap(player, goombas, goombaOverlap);
+			game.physics.arcade.overlap(player, coins, coinOverlap);
+
+			if (player.body.enable) {
+				player.body.velocity.x = 0;
+				if (cursors.left.isDown) {
+					player.body.velocity.x = -90;
+					player.animations.play('walkLeft');
+					player.goesRight = false;
+				} else if (cursors.right.isDown) {
+					player.body.velocity.x = 90;
+					player.animations.play('walkRight');
+					player.goesRight = true;
+				} else {
+					player.animations.stop();
+					if (player.goesRight)
+						player.frame = 0;
+					else
+						player.frame = 7;
+				}
+
+				if (cursors.up.isDown && player.body.onFloor()) {
+					player.body.velocity.y = -190;
+					player.animations.stop();
+				}
+
+				if (player.body.velocity.y != 0) {
+					if (player.goesRight)
+						player.frame = 5;
+					else
+						player.frame = 12;
+				}
+			}
+		}
+
+		function coinOverlap(player, coin) {
+			coin.kill();
+			if(coinscore < 50){
+				coinscore = coinscore + 1;
+			}
+			else{
+				coinscore = coinscore + 1;
+				player.frame = 6;
+				player.body.enable = false;
+				player.animations.stop();
+				scorep.textContent = "SCORE: " + score;
+				coinsp.textContent = "COINS: " + coinscore;
+				winp.textContent = "YOU WIN !!!"
+				setTimeout(recarregarPagina, tempoParaRecarregar);
+				game.time.events.add(Phaser.Timer.SECOND * 3, function() {
+					game.paused = true;
+				});
+			}
+
+
+		}
+
+		function goombaOverlap(player, goomba) {
+			if (player.body.touching.down) {
+				goomba.animations.stop();
+				goomba.frame = 2;
+				goomba.body.enable = false;
+				player.body.velocity.y = -80;
+				score = score + 100;
+				game.time.events.add(Phaser.Timer.SECOND, function() {
+					goomba.kill();
+				});
+			} else {
+				player.frame = 6;
+				player.body.enable = false;
+				player.animations.stop();
+				scorep.textContent = "SCORE: " + score;
+				coinsp.textContent = "COINS: " + coinscore;
+				setTimeout(recarregarPagina, tempoParaRecarregar);
+				game.time.events.add(Phaser.Timer.SECOND * 3, function() {
+					game.paused = true;
+				});
+			}
+		}
+		var tempoParaRecarregar = 5000;
+
+		function recarregarPagina() {
+			location.reload(); // Isso recarregará a página
+		}
+
+		// Create an AudioContext
+		var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+		// Load the audio file
+		var audioBuffer = null;
+		var audioSource = null;
+		var audioLoop = true; // Set to false if you want to disable looping
+
+		var audioRequest = new XMLHttpRequest();
+		audioRequest.open("GET", "./audio/theme.mp3", true);
+		audioRequest.responseType = "arraybuffer";
+
+		audioRequest.onload = function () {
+		audioContext.decodeAudioData(
+			audioRequest.response,
+			function (buffer) {
+			audioBuffer = buffer;
+			playAudio();
+			},
+			function (e) {
+			console.log("Error decoding audio data", e);
+			}
+		);
+		};
+		audioRequest.send();
+
+		// Play the audio with loop and autoplay
+		function playAudio() {
+		if (audioBuffer && !audioSource) {
+			audioSource = audioContext.createBufferSource();
+			audioSource.buffer = audioBuffer;
+			audioSource.loop = audioLoop;
+			audioSource.connect(audioContext.destination);
+			audioSource.start(0);
+		}
+		}
+
+	</script>
+</body>
+</html>
