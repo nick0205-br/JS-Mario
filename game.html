@@ -21,6 +21,9 @@ p {
 <script src="//cdn.jsdelivr.net/phaser/2.6.2/phaser.min.js"></script>
 </head>
 <body>
+	<audio autoplay loop style="display: none;">
+        <source src="./audio/theme.mp3" type="audio/mpeg">
+    </audio>
 	<p id="win"></p>
 	<p id="score"></p>
 	<p id="coin"></p>
@@ -138,7 +141,7 @@ p {
 
 		function coinOverlap(player, coin) {
 			coin.kill();
-			if(coinscore < 50){
+			if(coinscore < 69){
 				coinscore = coinscore + 1;
 			}
 			else{
@@ -183,44 +186,7 @@ p {
 		var tempoParaRecarregar = 5000;
 
 		function recarregarPagina() {
-			location.reload(); // Isso recarregará a página
-		}
-
-		// Create an AudioContext
-		var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-		// Load the audio file
-		var audioBuffer = null;
-		var audioSource = null;
-		var audioLoop = true; // Set to false if you want to disable looping
-
-		var audioRequest = new XMLHttpRequest();
-		audioRequest.open("GET", "./audio/theme.mp3", true);
-		audioRequest.responseType = "arraybuffer";
-
-		audioRequest.onload = function () {
-		audioContext.decodeAudioData(
-			audioRequest.response,
-			function (buffer) {
-			audioBuffer = buffer;
-			playAudio();
-			},
-			function (e) {
-			console.log("Error decoding audio data", e);
-			}
-		);
-		};
-		audioRequest.send();
-
-		// Play the audio with loop and autoplay
-		function playAudio() {
-		if (audioBuffer && !audioSource) {
-			audioSource = audioContext.createBufferSource();
-			audioSource.buffer = audioBuffer;
-			audioSource.loop = audioLoop;
-			audioSource.connect(audioContext.destination);
-			audioSource.start(0);
-		}
+			location.reload();
 		}
 
 	</script>
